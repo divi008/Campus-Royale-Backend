@@ -1,4 +1,7 @@
 {
+  "name": "campus-royale-backend",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
@@ -13,5 +16,10 @@
     "dotenv": "^16.0.3",
     "helmet": "^7.0.0",
     "express-rate-limit": "^6.7.0"
-  }
-} 
+  },
+  "main": "server.js",
+  "keywords": ["campus", "betting", "casino"],
+  "author": "Divyansh Gupta",
+  "license": "MIT",
+  "description": "Backend API for Campus Royale betting app"
+}
