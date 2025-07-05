@@ -105,4 +105,34 @@ router.post('/questions/:id/resolve', auth, admin, async (req, res) => {
   }
 });
 
+// Admin unresolve a question and reset all bets and winnings
+router.post('/questions/:id/unresolve', auth, admin, async (req, res) => {
+  try {
+    const question = await Question.findById(req.params.id);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+    // Reset question
+    question.isResolved = false;
+    question.correctOption = null;
+    await question.save();
+
+    // Find all bets for this question
+    const bets = await Bet.find({ questionId: question._id, resolved: true });
+    for (const bet of bets) {
+      if (bet.won && bet.winnings > 0) {
+        // Remove winnings from user
+        await User.findByIdAndUpdate(bet.userId, {
+          $inc: { tokens: -bet.winnings, winnings: -bet.winnings }
+        });
+      }
+      bet.resolved = false;
+      bet.won = false;
+      bet.winnings = 0;
+      await bet.save();
+    }
+    res.json({ message: 'Question unresolved and all bets reset' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router; 

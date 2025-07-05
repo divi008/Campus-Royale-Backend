@@ -50,4 +50,14 @@ router.post('/place-bet', auth, async (req, res) => {
   }
 });
 
+// Get all bets for the logged-in user
+router.get('/my-bets', auth, async (req, res) => {
+  try {
+    const bets = await Bet.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json(bets);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router; 
