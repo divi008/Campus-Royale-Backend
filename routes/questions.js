@@ -9,11 +9,11 @@ const User = require('../models/User');
 // Add question (admin only)
 router.post('/questions', auth, admin, async (req, res) => {
   try {
-    const { title, description, options } = req.body;
+    const { title, description, options, tags } = req.body;
     if (!title || !options || !Array.isArray(options) || options.length < 2) {
       return res.status(400).json({ message: 'Title and at least 2 options required' });
     }
-    const question = await Question.create({ title, description, options });
+    const question = await Question.create({ title, description, options, tags });
     res.json(question);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -48,13 +48,13 @@ router.delete('/questions/:id', auth, admin, async (req, res) => {
 router.put('/questions/:id', auth, admin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, options } = req.body;
+    const { title, description, options, tags } = req.body;
     if (!title || !options || !Array.isArray(options) || options.length < 2) {
       return res.status(400).json({ message: 'Title and at least 2 options required' });
     }
     const updated = await Question.findByIdAndUpdate(
       id,
-      { title, description, options },
+      { title, description, options, tags },
       { new: true }
     );
     if (!updated) {

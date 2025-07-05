@@ -8,7 +8,7 @@ const router = express.Router();
 // Submit a suggestion (authenticated users only)
 router.post('/suggestions', auth, async (req, res) => {
   try {
-    const { questionText, options, multipliers } = req.body;
+    const { questionText, options, multipliers, tags } = req.body;
     const userId = req.user.id;
 
     // Validate input
@@ -40,7 +40,8 @@ router.post('/suggestions', auth, async (req, res) => {
       questionText,
       options,
       multipliers: multipliers || options.map(() => 1.5),
-      suggestedBy: userId
+      suggestedBy: userId,
+      tags
     };
 
     const suggestion = await Suggestion.create(suggestionData);
@@ -81,7 +82,7 @@ router.get('/suggestions', auth, admin, async (req, res) => {
 router.put('/suggestions/:id/approve', auth, admin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, options } = req.body;
+    const { title, description, options, tags } = req.body;
 
     const suggestion = await Suggestion.findById(id).populate('suggestedBy', 'username');
     if (!suggestion) {
@@ -100,7 +101,8 @@ router.put('/suggestions/:id/approve', auth, admin, async (req, res) => {
         label: option,
         odds: suggestion.multipliers[index] || 1.5,
         votes: 0
-      }))
+      })),
+      tags: tags || suggestion.tags
     };
 
     const question = await Question.create(questionData);

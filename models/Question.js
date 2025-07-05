@@ -12,6 +12,7 @@ const QuestionSchema = new mongoose.Schema({
   options: [OptionSchema],
   isResolved: { type: Boolean, default: false },
   correctOption: { type: String, default: null },
+  tags: [{ type: String }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Question', QuestionSchema); 
