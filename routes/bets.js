@@ -32,7 +32,7 @@ router.post('/place-bet', auth, async (req, res) => {
     question.options.forEach((o, idx) => {
       const betRatio = (o.votes || 0) / totalBets;
       // Odds are higher if fewer bets, but maintain base ratio
-      let newOdds = (baseRatios[idx] / baseSum) * (1 / (betRatio || 0.01)) * 1.2;
+      let newOdds = (baseRatios[idx] / baseSum) * (1 / Math.max(betRatio, 0.15)) * 1.2;
       // Clamp odds between 1.2 and 10
       newOdds = Math.max(1.2, Math.min(newOdds, 10));
       o.odds = parseFloat(newOdds.toFixed(2));
