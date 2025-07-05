@@ -33,7 +33,7 @@ router.post('/place-bet', auth, async (req, res) => {
       }
     });
     const basePool = 500;
-    const maxChange = 0.05; // odds can only change by 0.05 per bet
+    const maxChange = 0.03; // odds can only change by 0.03 per bet
     const totalPool = question.options.reduce((sum, o) => sum + (basePool + (o.votes || 0)), 0);
     question.options.forEach((o) => {
       const prevOdds = o.odds;
