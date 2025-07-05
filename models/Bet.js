@@ -8,6 +8,7 @@ const BetSchema = new mongoose.Schema({
   resolved: { type: Boolean, default: false },
   won: { type: Boolean, default: false },
   winnings: { type: Number, default: 0 },
+  odds: { type: Number, default: 1.5 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Bet', BetSchema); 

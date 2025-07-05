@@ -39,7 +39,7 @@ router.post('/place-bet', auth, async (req, res) => {
     });
     await question.save();
     // Create bet
-    const bet = await Bet.create({ userId: user._id, questionId, option, amount });
+    const bet = await Bet.create({ userId: user._id, questionId, option, amount, odds: opt.odds });
     user.bets.push(bet._id);
     await user.save();
     res.json({ bet, tokens: user.tokens });

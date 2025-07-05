@@ -83,9 +83,8 @@ router.post('/questions/:id/resolve', auth, admin, async (req, res) => {
       let won = false;
       let winnings = 0;
       if (bet.option === correctOption) {
-        // Find the odds for this option
-        const opt = question.options.find(o => o.label === correctOption);
-        const odds = opt ? opt.odds : 1.5;
+        // Use the odds at the time of placing the bet
+        const odds = bet.odds || 1.5;
         winnings = bet.amount * odds;
         won = true;
         // Credit user
