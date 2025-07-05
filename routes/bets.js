@@ -16,23 +16,25 @@ router.post('/place-bet', auth, async (req, res) => {
     if (user.tokens < amount) return res.status(400).json({ message: 'Not enough tokens' });
     const question = await Question.findById(questionId);
     if (!question) return res.status(404).json({ message: 'Question not found' });
+    if (question.isResolved) return res.status(400).json({ message: 'Betting is closed for this question' });
     const opt = question.options.find(o => o.label === option);
     if (!opt) return res.status(400).json({ message: 'Option not found' });
     // Deduct tokens
     user.tokens -= amount;
     opt.votes += amount;
 
-    // --- Dynamic Odds Calculation ---
+    // --- Dynamic Odds Calculation (with smoothing) ---
     // Calculate total tokens bet on all options
     const totalBets = question.options.reduce((sum, o) => sum + (o.votes || 0), 0) || 1;
     // Use initial odds as base ratios
     const baseRatios = question.options.map(o => o.odds || 1.5);
     const baseSum = baseRatios.reduce((a, b) => a + b, 0) || 1;
-    // New odds: proportional to base, inversely proportional to amount bet
     question.options.forEach((o, idx) => {
       const betRatio = (o.votes || 0) / totalBets;
-      // Odds are higher if fewer bets, but maintain base ratio
-      let newOdds = (baseRatios[idx] / baseSum) * (1 / Math.max(betRatio, 0.15)) * 1.2;
+      // Dynamic odds (inverse to bet ratio, but not too fast)
+      let dynamicOdds = (baseRatios[idx] / baseSum) * (1 / Math.max(betRatio, 0.15)) * 1.2;
+      // Weighted average for smoothing
+      let newOdds = 0.7 * (baseRatios[idx]) + 0.3 * dynamicOdds;
       // Clamp odds between 1.2 and 10
       newOdds = Math.max(1.2, Math.min(newOdds, 10));
       o.odds = parseFloat(newOdds.toFixed(2));
