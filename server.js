@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const questionRoutes = require('./routes/questions');
 const betRoutes = require('./routes/bets');
 const leaderboardRoutes = require('./routes/leaderboard');
+const suggestionRoutes = require('./routes/suggestions');
 
 const app = express();
 connectDB();
@@ -39,6 +40,7 @@ app.use('/api', authRoutes);
 app.use('/api', questionRoutes);
 app.use('/api', betRoutes);
 app.use('/api', leaderboardRoutes);
+app.use('/api', suggestionRoutes);
 
 app.get('/', (req, res) => res.send('Campus Royale API running'));
 
