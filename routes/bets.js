@@ -33,12 +33,18 @@ router.post('/place-bet', auth, async (req, res) => {
       }
     });
     const basePool = 500;
+    const maxChange = 0.05; // odds can only change by 0.05 per bet
     const totalPool = question.options.reduce((sum, o) => sum + (basePool + (o.votes || 0)), 0);
     question.options.forEach((o) => {
+      const prevOdds = o.odds;
       const optionPool = basePool + (o.votes || 0);
       const baseOdds = o.baseOdds;
       let newOdds = baseOdds * (totalPool / optionPool);
       newOdds = Math.max(baseOdds * 0.5, Math.min(newOdds, baseOdds * 3));
+      // Clamp the change per bet
+      if (typeof prevOdds === 'number') {
+        newOdds = Math.max(prevOdds - maxChange, Math.min(prevOdds + maxChange, newOdds));
+      }
       o.odds = parseFloat(newOdds.toFixed(2));
     });
     await question.save();
