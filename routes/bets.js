@@ -19,6 +19,8 @@ router.post('/place-bet', auth, async (req, res) => {
     if (question.isResolved) return res.status(400).json({ message: 'Betting is closed for this question' });
     const opt = question.options.find(o => o.label === option);
     if (!opt) return res.status(400).json({ message: 'Option not found' });
+    // Save the odds BEFORE updating votes/odds
+    const oddsAtBet = opt.odds;
     // Deduct tokens
     user.tokens -= amount;
     opt.votes += amount;
@@ -40,8 +42,8 @@ router.post('/place-bet', auth, async (req, res) => {
       o.odds = parseFloat(newOdds.toFixed(2));
     });
     await question.save();
-    // Create bet
-    const bet = await Bet.create({ userId: user._id, questionId, option, amount, odds: opt.odds });
+    // Create bet with the odds at the time of placement
+    const bet = await Bet.create({ userId: user._id, questionId, option, amount, odds: oddsAtBet });
     user.bets.push(bet._id);
     await user.save();
     res.json({ bet, tokens: user.tokens });
@@ -53,7 +55,7 @@ router.post('/place-bet', auth, async (req, res) => {
 // Get all bets for the logged-in user
 router.get('/my-bets', auth, async (req, res) => {
   try {
-    const bets = await Bet.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const bets = await Bet.find({ userId: req.user._id }).sort({ createdAt: -1 }).populate('questionId', 'title');
     res.json(bets);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
