@@ -28,4 +28,18 @@ router.get('/questions', async (req, res) => {
   }
 });
 
+// Delete question (admin only)
+router.delete('/questions/:id', auth, admin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Question.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    res.json({ message: 'Question deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router; 
