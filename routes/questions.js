@@ -42,4 +42,26 @@ router.delete('/questions/:id', auth, admin, async (req, res) => {
   }
 });
 
+// Update question (admin only)
+router.put('/questions/:id', auth, admin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, options } = req.body;
+    if (!title || !options || !Array.isArray(options) || options.length < 2) {
+      return res.status(400).json({ message: 'Title and at least 2 options required' });
+    }
+    const updated = await Question.findByIdAndUpdate(
+      id,
+      { title, description, options },
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router; 
