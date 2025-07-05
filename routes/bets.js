@@ -25,27 +25,17 @@ router.post('/place-bet', auth, async (req, res) => {
     user.tokens -= amount;
     opt.votes += amount;
 
-    // --- Dynamic Odds Calculation (with smoothing) ---
-    // Ensure each option has a baseOdds field (set at question creation, fallback to initial odds)
+    // Calculate total amount bet on all options
+    const totalPool = question.options.reduce((sum, o) => sum + (o.votes || 0), 0);
+    const safeTotal = Math.max(totalPool, 1);
     question.options.forEach((o) => {
-      if (typeof o.baseOdds !== 'number') {
-        o.baseOdds = o.odds || 1.5;
-      }
-    });
-    const basePool = 500;
-    const maxChange = 0.03; // odds can only change by 0.03 per bet
-    const totalPool = question.options.reduce((sum, o) => sum + (basePool + (o.votes || 0)), 0);
-    question.options.forEach((o) => {
-      const prevOdds = o.odds;
-      const optionPool = basePool + (o.votes || 0);
-      const baseOdds = o.baseOdds;
-      let newOdds = baseOdds * (totalPool / optionPool);
-      newOdds = Math.max(baseOdds * 0.5, Math.min(newOdds, baseOdds * 3));
-      // Clamp the change per bet
-      if (typeof prevOdds === 'number') {
-        newOdds = Math.max(prevOdds - maxChange, Math.min(prevOdds + maxChange, newOdds));
-      }
-      o.odds = parseFloat(newOdds.toFixed(2));
+      // Use admin-set baseMultiplier (baseOdds) as base
+      const base = o.baseOdds || o.odds || 1.5;
+      const p = (o.votes || 0) / safeTotal;
+      const inverseP = 1 - p;
+      let newMultiplier = base * (0.9 + 0.2 * inverseP); // smooth, symmetric change
+      newMultiplier = Math.max(base * 0.85, Math.min(newMultiplier, base * 1.15));
+      o.odds = Number(newMultiplier.toFixed(2));
     });
     await question.save();
     // Create bet with the odds at the time of placement
