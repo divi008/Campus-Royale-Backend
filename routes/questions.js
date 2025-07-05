@@ -3,6 +3,8 @@ const Question = require('../models/Question');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const router = express.Router();
+const Bet = require('../models/Bet');
+const User = require('../models/User');
 
 // Add question (admin only)
 router.post('/questions', auth, admin, async (req, res) => {
@@ -59,6 +61,46 @@ router.put('/questions/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ message: 'Question not found' });
     }
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Admin resolves a question and credits winnings
+router.post('/questions/:id/resolve', auth, admin, async (req, res) => {
+  const { correctOption } = req.body;
+  try {
+    const question = await Question.findById(req.params.id);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+    question.correctOption = correctOption;
+    question.isResolved = true;
+    await question.save();
+
+    // Find all bets for this question
+    const bets = await Bet.find({ questionId: question._id, resolved: { $ne: true } });
+    let results = [];
+    for (const bet of bets) {
+      let won = false;
+      let winnings = 0;
+      if (bet.option === correctOption) {
+        // Find the odds for this option
+        const opt = question.options.find(o => o.label === correctOption);
+        const odds = opt ? opt.odds : 1.5;
+        winnings = bet.amount * odds;
+        won = true;
+        // Credit user
+        await User.findByIdAndUpdate(bet.userId, {
+          $inc: { tokens: winnings, winnings: winnings }
+        });
+      }
+      // Mark bet as resolved
+      bet.resolved = true;
+      bet.won = won;
+      bet.winnings = winnings;
+      await bet.save();
+      results.push({ betId: bet._id, userId: bet.userId, won, winnings });
+    }
+    res.json({ message: 'Question resolved and winnings credited', results });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

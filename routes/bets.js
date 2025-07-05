@@ -21,6 +21,22 @@ router.post('/place-bet', auth, async (req, res) => {
     // Deduct tokens
     user.tokens -= amount;
     opt.votes += amount;
+
+    // --- Dynamic Odds Calculation ---
+    // Calculate total tokens bet on all options
+    const totalBets = question.options.reduce((sum, o) => sum + (o.votes || 0), 0) || 1;
+    // Use initial odds as base ratios
+    const baseRatios = question.options.map(o => o.odds || 1.5);
+    const baseSum = baseRatios.reduce((a, b) => a + b, 0) || 1;
+    // New odds: proportional to base, inversely proportional to amount bet
+    question.options.forEach((o, idx) => {
+      const betRatio = (o.votes || 0) / totalBets;
+      // Odds are higher if fewer bets, but maintain base ratio
+      let newOdds = (baseRatios[idx] / baseSum) * (1 / (betRatio || 0.01)) * 1.2;
+      // Clamp odds between 1.2 and 10
+      newOdds = Math.max(1.2, Math.min(newOdds, 10));
+      o.odds = parseFloat(newOdds.toFixed(2));
+    });
     await question.save();
     // Create bet
     const bet = await Bet.create({ userId: user._id, questionId, option, amount });
