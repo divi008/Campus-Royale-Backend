@@ -26,19 +26,19 @@ router.post('/place-bet', auth, async (req, res) => {
     opt.votes += amount;
 
     // --- Dynamic Odds Calculation (with smoothing) ---
-    // Calculate total tokens bet on all options
-    const totalBets = question.options.reduce((sum, o) => sum + (o.votes || 0), 0) || 1;
-    // Use initial odds as base ratios
-    const baseRatios = question.options.map(o => o.odds || 1.5);
-    const baseSum = baseRatios.reduce((a, b) => a + b, 0) || 1;
-    question.options.forEach((o, idx) => {
-      const betRatio = (o.votes || 0) / totalBets;
-      // Dynamic odds (inverse to bet ratio, but not too fast)
-      let dynamicOdds = (baseRatios[idx] / baseSum) * (1 / Math.max(betRatio, 0.15)) * 1.2;
-      // Weighted average for smoothing
-      let newOdds = 0.7 * (baseRatios[idx]) + 0.3 * dynamicOdds;
-      // Clamp odds between 1.2 and 10
-      newOdds = Math.max(1.2, Math.min(newOdds, 10));
+    // Ensure each option has a baseOdds field (set at question creation, fallback to initial odds)
+    question.options.forEach((o) => {
+      if (typeof o.baseOdds !== 'number') {
+        o.baseOdds = o.odds || 1.5;
+      }
+    });
+    const basePool = 20;
+    const totalPool = question.options.reduce((sum, o) => sum + (basePool + (o.votes || 0)), 0);
+    question.options.forEach((o) => {
+      const optionPool = basePool + (o.votes || 0);
+      const baseOdds = o.baseOdds;
+      let newOdds = baseOdds * (totalPool / optionPool);
+      newOdds = Math.max(baseOdds * 0.5, Math.min(newOdds, baseOdds * 3));
       o.odds = parseFloat(newOdds.toFixed(2));
     });
     await question.save();
