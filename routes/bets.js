@@ -32,7 +32,7 @@ router.post('/place-bet', auth, async (req, res) => {
         o.baseOdds = o.odds || 1.5;
       }
     });
-    const basePool = 20;
+    const basePool = 500;
     const totalPool = question.options.reduce((sum, o) => sum + (basePool + (o.votes || 0)), 0);
     question.options.forEach((o) => {
       const optionPool = basePool + (o.votes || 0);
